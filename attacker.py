@@ -1,5 +1,7 @@
 import socket
 import os
+
+
 banner = """
  ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███████╗██╗  ██╗███████╗██╗     ██╗     
 ██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝██╔════╝██║  ██║██╔════╝██║     ██║     
@@ -48,6 +50,10 @@ while True:   # 🔥 main loop add
 
             if msg.lower() == "clear":
                 os.system("cls")
+                os.system("clear")
+
+            if msg.lower() == "banner":
+                print(banner)
 
             while True:
                 data = capture_msg(conn)
