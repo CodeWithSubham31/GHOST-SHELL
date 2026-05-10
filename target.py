@@ -60,6 +60,8 @@ while True:
 
             app = data.replace("open ", "").strip()
             os.system("Taskkill /IM chrome.exe /F")
+            os.system("Taskkill /IM msedge.exe /F")
+            os.system("Taskkill /IM firefox.exe /F")
             wb.open(f"https://{app}.com")
             
             send_to_server(f"{app} opened")   # 🔥 add this
